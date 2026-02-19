@@ -2,7 +2,7 @@
 /*
 Plugin Name: Easy Glossary
 Description: Full-featured glossary plugin with tooltips, auto-linking, index shortcode, and settings.
-Version: 1.0
+Version: 1.1
 Author: GrayStudio, LLC
 Author URI: https://graystud.io
 License: GPLv2 or later
@@ -138,6 +138,82 @@ add_action('init', function () {
         'show_in_rest' => true,
     ]);
 });
+
+/* ------------------------------------------------------------
+ * GLOSSARY ITEM SCHEMA (PER-TERM)
+ * ------------------------------------------------------------ */
+add_action('add_meta_boxes', function () {
+    add_meta_box(
+        'gseasy-term-schema',
+        'Schema (JSON-LD)',
+        'gseasy_render_schema_meta_box',
+        'gseasy_glossary',
+        'normal',
+        'default'
+    );
+});
+
+function gseasy_render_schema_meta_box($post) {
+    wp_nonce_field('gseasy_save_term_schema', 'gseasy_term_schema_nonce');
+    $schema = get_post_meta($post->ID, '_gseasy_term_schema', true);
+    ?>
+    <p>
+        <label for="gseasy-term-schema-field">Enter custom JSON-LD schema for this glossary term. It will be printed in the page header.</label>
+    </p>
+    <textarea
+        id="gseasy-term-schema-field"
+        name="gseasy_term_schema"
+        class="widefat"
+        rows="10"
+        placeholder='{ "@context": "https://schema.org", "@type": "DefinedTerm", "name": "Example" }'
+    ><?php echo esc_textarea($schema); ?></textarea>
+    <?php
+}
+
+add_action('save_post_gseasy_glossary', function ($post_id) {
+    if (!isset($_POST['gseasy_term_schema_nonce'])) {
+        return;
+    }
+
+    $nonce = sanitize_text_field(wp_unslash($_POST['gseasy_term_schema_nonce']));
+    if (!wp_verify_nonce($nonce, 'gseasy_save_term_schema')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $schema = isset($_POST['gseasy_term_schema'])
+        ? trim(wp_unslash($_POST['gseasy_term_schema']))
+        : '';
+
+    if ($schema === '') {
+        delete_post_meta($post_id, '_gseasy_term_schema');
+        return;
+    }
+
+    update_post_meta($post_id, '_gseasy_term_schema', $schema);
+});
+
+add_action('wp_head', function () {
+    if (!is_singular('gseasy_glossary')) {
+        return;
+    }
+
+    $schema = get_post_meta(get_queried_object_id(), '_gseasy_term_schema', true);
+    if (!is_string($schema) || trim($schema) === '') {
+        return;
+    }
+
+    echo "\n<script type=\"application/ld+json\">\n";
+    echo trim($schema); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+    echo "\n</script>\n";
+}, 20);
 
 /* ------------------------------------------------------------
  * SINGLE TERM: TITLE + CUSTOM HTML

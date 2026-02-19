@@ -5,7 +5,7 @@ Tags: glossary, tooltips, terms, index, dictionary
 Requires at least: 5.7
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.0
+Stable tag: 1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,6 +33,10 @@ Yes, it uses standard hooks and minimal CSS.
 To show the glossary archive, you need to use the shortcode [gseasy_glossary].
 
 == Changelog ==
+
+= 1.1 =
+* Added a per-term Schema (JSON-LD) textarea under glossary item editing.
+* Added output of custom term schema in the page header on single glossary term pages.
 
 = 1.0 =
 * Initial public release.
