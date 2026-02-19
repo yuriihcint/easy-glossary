@@ -1,0 +1,144 @@
+/* Glossary term */
+.gseasy-term {
+    text-decoration: underline;
+    cursor: help;
+}
+
+/* Custom HTML at end of term page */
+.gseasy-custom-html {
+    margin-top: 20px;
+    padding: 10px;
+    border-top: 1px solid #ccc;
+}
+
+/* Glossary index layouts */
+.gseasy-index.list .gseasy-item {
+    margin-bottom: 5px;
+}
+
+.gseasy-index.grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.gseasy-index.grid .gseasy-item {
+    width: 25%;
+    padding: 5px;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+/* Search and Alphabet Filter */
+.gseasy-search-form {
+    margin-bottom: 20px;
+}
+
+.gseasy-search-form input,
+.gseasy-search-form button {
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.gseasy-alphabet-filter {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.gseasy-alphabet-filter a {
+    text-decoration: none;
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #555;
+    background-color: #f9f9f9;
+}
+
+.gseasy-alphabet-filter a:hover {
+    background-color: #eee;
+}
+
+.gseasy-alphabet-filter a.active {
+    background-color: var(--theme-font-button_background-color, var(--theme-color-link));
+    color: #fff;
+    border-color: var(--theme-font-button_background-color, var(--theme-color-link));
+}
+
+.gseasy-index.list .gseasy-group-letter {
+    margin-bottom: 0;
+}
+
+/* Letter headings */
+.gseasy-group-letter {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #666;
+    margin-top: 20px !important;
+    margin-bottom: 20px !important;
+    width: max-content;
+    padding: 5px 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
+    height: fit-content;
+}
+
+/* Excerpt styling */
+.gseasy-item-excerpt {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+/* Tooltip */
+.gseasy-tooltip {
+    position: absolute;
+    background: rgba(60, 60, 60, 0.9);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    max-width: 250px;
+    z-index: 9999;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    display: none;
+    line-height: 1.4;
+    transition: opacity 0.2s ease;
+}
+
+/* Tooltip style variants via JS-added class */
+.gseasy-tooltip.light {
+    background: #f9f9f9;
+    color: #333;
+    border: 1px solid #ccc;
+}
+.gseasy-tooltip.dark {
+    background: #333;
+    color: #fff;
+}
+.gseasy-tooltip.minimal {
+    background: transparent;
+    color: var(--theme-font-button_background-color, var(--theme-color-link));
+    font-style: italic;
+    box-shadow: none;
+    padding: 2px 4px;
+    border: none;
+    text-decoration: underline;
+}
+
+/* Mobile styles for grid layout */
+@media (max-width: 768px) {
+    .gseasy-index.grid .gseasy-item {
+        width: 48%; /* 2 items per row */
+    }
+}
+@media (max-width: 480px) {
+    .gseasy-index.grid .gseasy-item {
+        width: 100%; /* 1 item per row */
+    }
+}
