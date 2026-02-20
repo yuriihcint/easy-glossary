@@ -44,11 +44,27 @@ add_action('admin_init', function () {
     register_setting('gseasy_settings_group', 'gseasy_auto_link',      ['sanitize_callback' => 'rest_sanitize_boolean']);
     register_setting('gseasy_settings_group', 'gseasy_tooltip_enable', ['sanitize_callback' => 'rest_sanitize_boolean']);
     register_setting('gseasy_settings_group', 'gseasy_tooltip_style',  ['sanitize_callback' => 'sanitize_text_field']);
-    register_setting('gseasy_settings_group', 'gseasy_index_layout',   ['sanitize_callback' => 'sanitize_text_field']);
+    register_setting('gseasy_settings_group', 'gseasy_index_layout',   ['sanitize_callback' => 'gseasy_sanitize_index_layout']);
     register_setting('gseasy_settings_group', 'gseasy_custom_html',    ['sanitize_callback' => 'wp_kses_post']);
     register_setting('gseasy_settings_group', 'gseasy_permalink_slug', ['sanitize_callback' => 'sanitize_title']);
     register_setting('gseasy_settings_group', 'gseasy_enable_archive', ['sanitize_callback' => 'rest_sanitize_boolean']);
 });
+
+function gseasy_sanitize_index_layout($value) {
+    $value = sanitize_key((string) $value);
+    return in_array($value, ['list', 'grid'], true) ? $value : 'list';
+}
+
+function gseasy_get_index_layout() {
+    $layout = gseasy_sanitize_index_layout(get_option('gseasy_index_layout', 'list'));
+
+    // Self-heal invalid/stale values so subsequent requests are consistent.
+    if (get_option('gseasy_index_layout', 'list') !== $layout) {
+        update_option('gseasy_index_layout', $layout);
+    }
+
+    return $layout;
+}
 
 function gseasy_render_settings_page() { ?>
     <div class="wrap">
@@ -84,7 +100,7 @@ function gseasy_render_settings_page() { ?>
                 <tr>
                     <th>Index Layout</th>
                     <td>
-                        <?php $layout = get_option('gseasy_index_layout', 'list'); ?>
+                        <?php $layout = gseasy_get_index_layout(); ?>
                         <select name="gseasy_index_layout">
                             <option value="list" <?php selected($layout, 'list'); ?>>List</option>
                             <option value="grid" <?php selected($layout, 'grid'); ?>>Grid</option>
@@ -399,7 +415,7 @@ function gseasy_auto_link_terms($content) {
  * SHORTCODE: [gseasy_glossary]
  * ------------------------------------------------------------ */
 function gseasy_render_index_shortcode() {
-    $layout = get_option('gseasy_index_layout', 'list');
+    $layout = gseasy_get_index_layout();
     $current_letter = get_query_var('gseasy_letter');
     $search_query   = get_query_var('gseasy_search');
 
