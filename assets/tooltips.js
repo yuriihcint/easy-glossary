@@ -40,21 +40,4 @@
     });
   }
 
-  const scrollButtons = document.querySelectorAll('.gseasy-scroll-up');
-  if (!scrollButtons.length) return;
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Compatibility fallback for themes/browsers using document-level scrolling.
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-  };
-
-  scrollButtons.forEach(button => {
-    button.addEventListener('click', event => {
-      event.preventDefault();
-      scrollToTop();
-    });
-  });
 })();

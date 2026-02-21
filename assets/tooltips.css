@@ -183,3 +183,13 @@
         width: 100%; /* 1 item per row */
     }
 }
+
+
+.gseasy-top-anchor {
+    position: relative;
+    top: -8px;
+}
+
+.gseasy-scroll-up {
+    text-decoration: none;
+}

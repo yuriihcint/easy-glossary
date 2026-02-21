@@ -302,7 +302,7 @@ add_filter('the_content', function ($content) {
         $alphabet_links[] = '<a href="' . esc_url($url) . '" class="' . esc_attr($class) . '">' . esc_html($letter) . '</a>';
     }
 
-    $alphabet_html = '<div class="gseasy-alphabet-filter">' . implode('', $alphabet_links) . '</div>';
+    $alphabet_html = '<div id="gseasy-top" class="gseasy-top-anchor" aria-hidden="true"></div><div class="gseasy-alphabet-filter">' . implode('', $alphabet_links) . '</div>';
 
     // Build Search Form (GET) – keep current letter and include nonce
     $form_action = $base_url;
@@ -322,7 +322,7 @@ add_filter('the_content', function ($content) {
     $custom_html = $custom ? '<div class="gseasy-custom-html">' . wp_kses_post($custom) . '</div>' : '';
 
     // Assemble final output
-    return $alphabet_html . $search_html . $title . $content . $custom_html . '<button type="button" class="gseasy-scroll-up" aria-label="Scroll to glossary top">↑</button>';
+    return $alphabet_html . $search_html . $title . $content . $custom_html . '<a class="gseasy-scroll-up" href="#gseasy-top" aria-label="Scroll to glossary top">↑</a>';
 }, 10);
 
 /* ------------------------------------------------------------
@@ -474,6 +474,7 @@ function gseasy_render_index_shortcode() {
     ob_start();
 
     $base_url = get_permalink();
+    echo '<div id="gseasy-top" class="gseasy-top-anchor" aria-hidden="true"></div>';
     echo '<div class="gseasy-alphabet-filter">';
     $all_url = esc_url( add_query_arg( array( 'gseasy_search' => $search_query ), $base_url ) );
     echo '<a href="' . esc_url( $all_url ) . '" class="gseasy-filter-all' . ($current_letter === '' ? ' active' : '') . '">All</a>';
@@ -546,7 +547,7 @@ function gseasy_render_index_shortcode() {
     }
 
     echo '</div>';
-    echo '<button type="button" class="gseasy-scroll-up" aria-label="Scroll to glossary top">↑</button>';
+    echo '<a class="gseasy-scroll-up" href="#gseasy-top" aria-label="Scroll to glossary top">↑</a>';
 
     return ob_get_clean();
 }
