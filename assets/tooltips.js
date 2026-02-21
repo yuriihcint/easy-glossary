@@ -43,14 +43,18 @@
   const scrollButtons = document.querySelectorAll('.gseasy-scroll-up');
   if (!scrollButtons.length) return;
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Compatibility fallback for themes/browsers using document-level scrolling.
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
   scrollButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const target = document.querySelector('.gseasy-search-form, .gseasy-alphabet-filter');
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      scrollToTop();
     });
   });
 })();
