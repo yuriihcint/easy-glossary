@@ -2,7 +2,7 @@
 /*
 Plugin Name: Easy Glossary
 Description: Full-featured glossary plugin with tooltips, auto-linking, index shortcode, and settings.
-Version: 1.1
+Version: 1.2
 Author: GrayStudio, LLC
 Author URI: https://graystud.io
 License: GPLv2 or later
@@ -258,6 +258,9 @@ add_filter('the_content', function ($content) {
             $current_letter = strtoupper(
                 sanitize_text_field(wp_unslash($_GET['gseasy_letter']))
             );
+            if (in_array($current_letter, ['#', 'DIGITS', '0-9'], true)) {
+                $current_letter = '#';
+            }
         }
     }
 
@@ -278,6 +281,15 @@ add_filter('the_content', function ($content) {
     );
     $alphabet_links[] = '<a href="' . esc_url($all_url) . '" class="gseasy-filter-all' . ($current_letter === '' ? ' active' : '') . '">All</a>';
 
+    $digit_url = add_query_arg(
+        array_filter([
+            'gseasy_letter' => 'digits',
+            'gseasy_search' => ($search_query !== '' ? $search_query : null),
+        ]),
+        $base_url
+    );
+    $alphabet_links[] = '<a href="' . esc_url($digit_url) . '" class="' . esc_attr($current_letter === '#' ? 'active' : '') . '">#</a>';
+
     foreach (range('A', 'Z') as $letter) {
         $url = add_query_arg(
             array_filter([
@@ -290,7 +302,7 @@ add_filter('the_content', function ($content) {
         $alphabet_links[] = '<a href="' . esc_url($url) . '" class="' . esc_attr($class) . '">' . esc_html($letter) . '</a>';
     }
 
-    $alphabet_html = '<div class="gseasy-alphabet-filter">' . implode('', $alphabet_links) . '</div>';
+    $alphabet_html = '<div id="gseasy-top" class="gseasy-top-anchor" aria-hidden="true"></div><div class="gseasy-alphabet-filter">' . implode('', $alphabet_links) . '</div>';
 
     // Build Search Form (GET) – keep current letter and include nonce
     $form_action = $base_url;
@@ -310,7 +322,7 @@ add_filter('the_content', function ($content) {
     $custom_html = $custom ? '<div class="gseasy-custom-html">' . wp_kses_post($custom) . '</div>' : '';
 
     // Assemble final output
-    return $alphabet_html . $search_html . $title . $content . $custom_html;
+    return $alphabet_html . $search_html . $title . $content . $custom_html . '<a class="gseasy-scroll-up" href="#gseasy-top" aria-label="Scroll to glossary top">↑</a>';
 }, 10);
 
 /* ------------------------------------------------------------
@@ -419,6 +431,17 @@ function gseasy_render_index_shortcode() {
     $current_letter = get_query_var('gseasy_letter');
     $search_query   = get_query_var('gseasy_search');
 
+    if (is_string($current_letter)) {
+        $current_letter = strtoupper(trim($current_letter));
+    }
+
+    // Support multiple aliases because raw '#' may be swallowed as URL fragment when typed manually.
+    if (in_array($current_letter, ['#', 'DIGITS', '0-9'], true)) {
+        $current_letter = '#';
+    }
+
+    $is_digit_bucket = ($current_letter === '#');
+
     $args = [
         'post_type'      => 'gseasy_glossary',
         'posts_per_page' => -1,
@@ -426,25 +449,37 @@ function gseasy_render_index_shortcode() {
         'order'          => 'ASC',
     ];
 
-    if ($search_query) {
-        $args['s'] = $search_query;
-    } elseif ($current_letter && ctype_alpha($current_letter) && strlen($current_letter) === 1) {
-        add_filter('posts_where', 'gseasy_filter_by_first_letter');
-    }
-
     $terms_query = new WP_Query($args);
     $terms = $terms_query->posts;
 
+    if ($search_query) {
+        $terms = gseasy_filter_terms_by_search($terms, $search_query);
+    }
+
     if ($current_letter) {
-        remove_filter('posts_where', 'gseasy_filter_by_first_letter');
+        $terms = array_values(array_filter($terms, function ($term) use ($current_letter, $is_digit_bucket) {
+            $first_char = mb_substr($term->post_title, 0, 1);
+            if ($first_char === '') {
+                return false;
+            }
+
+            if ($is_digit_bucket) {
+                return preg_match('/^\d$/u', $first_char) === 1;
+            }
+
+            return strtoupper($first_char) === $current_letter;
+        }));
     }
 
     ob_start();
 
     $base_url = get_permalink();
+    echo '<div id="gseasy-top" class="gseasy-top-anchor" aria-hidden="true"></div>';
     echo '<div class="gseasy-alphabet-filter">';
     $all_url = esc_url( add_query_arg( array( 'gseasy_search' => $search_query ), $base_url ) );
-    echo '<a href="' . esc_url( $all_url ) . '" class="gseasy-filter-all">All</a>';
+    echo '<a href="' . esc_url( $all_url ) . '" class="gseasy-filter-all' . ($current_letter === '' ? ' active' : '') . '">All</a>';
+    $digit_url = esc_url(add_query_arg(array('gseasy_letter' => 'digits', 'gseasy_search' => $search_query), $base_url));
+    echo '<a href="' . esc_url($digit_url) . '" class="' . esc_attr($is_digit_bucket ? 'active' : '') . '">#</a>';
     foreach (range('A', 'Z') as $letter) {
         $url = esc_url( add_query_arg( array( 'gseasy_letter' => $letter, 'gseasy_search' => $search_query ), $base_url ) );
         $class = ($letter === $current_letter) ? 'active' : '';
@@ -468,26 +503,51 @@ function gseasy_render_index_shortcode() {
     if (empty($terms)) {
         echo '<p>No glossary terms found.</p>';
     } else {
-        $grouped_terms = [];
-        foreach ($terms as $term) {
-            $first_letter = strtoupper(mb_substr($term->post_title, 0, 1));
-            $grouped_terms[$first_letter][] = $term;
-        }
-        ksort($grouped_terms);
-
-        foreach ($grouped_terms as $letter => $group) {
-            echo '<h2 class="gseasy-group-letter">' . esc_html($letter) . '</h2>';
-            foreach ($group as $term) {
+        if ($search_query) {
+            // Keep ranked order from gseasy_filter_terms_by_search() so title matches stay at the top.
+            foreach ($terms as $term) {
                 $excerpt = gseasy_get_excerpt($term, 30);
                 echo '<div class="gseasy-item">';
-                echo '<h3><a href="' . esc_url( get_permalink($term)) . '">' . esc_html($term->post_title) . '</a></h3>';
+                echo '<a class="gseasy-item-link" href="' . esc_url(get_permalink($term)) . '">';
+                echo '<h3>' . esc_html($term->post_title) . '</h3>';
                 echo '<p class="gseasy-item-excerpt">' . esc_html($excerpt) . '</p>';
+                echo '</a>';
                 echo '</div>';
+            }
+        } else {
+            $grouped_terms = [];
+            foreach ($terms as $term) {
+                $first_letter = strtoupper(mb_substr($term->post_title, 0, 1));
+                if (preg_match('/^\d$/u', $first_letter)) {
+                    $first_letter = '#';
+                }
+                $grouped_terms[$first_letter][] = $term;
+            }
+            ksort($grouped_terms);
+
+            if (isset($grouped_terms['#'])) {
+                $digit_group = ['#' => $grouped_terms['#']];
+                unset($grouped_terms['#']);
+                $grouped_terms = $digit_group + $grouped_terms;
+            }
+
+            foreach ($grouped_terms as $letter => $group) {
+                echo '<h2 class="gseasy-group-letter">' . esc_html($letter) . '</h2>';
+                foreach ($group as $term) {
+                    $excerpt = gseasy_get_excerpt($term, 30);
+                    echo '<div class="gseasy-item">';
+                    echo '<a class="gseasy-item-link" href="' . esc_url(get_permalink($term)) . '">';
+                    echo '<h3>' . esc_html($term->post_title) . '</h3>';
+                    echo '<p class="gseasy-item-excerpt">' . esc_html($excerpt) . '</p>';
+                    echo '</a>';
+                    echo '</div>';
+                }
             }
         }
     }
 
     echo '</div>';
+    echo '<a class="gseasy-scroll-up" href="#gseasy-top" aria-label="Scroll to glossary top">↑</a>';
 
     return ob_get_clean();
 }
@@ -508,6 +568,54 @@ function gseasy_filter_by_first_letter($where) {
         $where .= $wpdb->prepare(" AND $wpdb->posts.post_title LIKE %s", $wpdb->esc_like($current_letter) . '%');
     }
     return $where;
+}
+
+function gseasy_filter_terms_by_search(array $terms, $search_query) {
+    $needle = mb_strtolower(trim((string) $search_query));
+    if ($needle === '') {
+        return $terms;
+    }
+
+    $scored_terms = [];
+
+    foreach ($terms as $term) {
+        $title = mb_strtolower($term->post_title);
+        $body = mb_strtolower(wp_strip_all_tags($term->post_content . ' ' . $term->post_excerpt));
+
+        $title_pos = mb_strpos($title, $needle);
+        $body_pos = mb_strpos($body, $needle);
+
+        if ($title_pos === false && $body_pos === false) {
+            continue;
+        }
+
+        $score = 0;
+        if ($title === $needle) {
+            $score = 400;
+        } elseif ($title_pos === 0) {
+            $score = 300;
+        } elseif ($title_pos !== false) {
+            $score = 200;
+        } elseif ($body_pos !== false) {
+            $score = 100;
+        }
+
+        $scored_terms[] = [
+            'term' => $term,
+            'score' => $score,
+        ];
+    }
+
+    usort($scored_terms, function ($a, $b) {
+        if ($a['score'] === $b['score']) {
+            return strcasecmp($a['term']->post_title, $b['term']->post_title);
+        }
+        return $b['score'] <=> $a['score'];
+    });
+
+    return array_map(function ($item) {
+        return $item['term'];
+    }, $scored_terms);
 }
 
 /* ------------------------------------------------------------
@@ -549,8 +657,6 @@ add_action('wp_enqueue_scripts', function () {
         );
     }
 
-    if (! (bool) get_option('gseasy_tooltip_enable', 0)) return;
-
     if (file_exists(GSEASY_PLUGIN_DIR . $js_file)) {
         wp_enqueue_script(
             'gseasy-tooltips',
@@ -560,7 +666,7 @@ add_action('wp_enqueue_scripts', function () {
             true
         );
         wp_localize_script('gseasy-tooltips', 'GSEASYSettings', [
-            'tooltipEnable' => true,
+            'tooltipEnable' => (bool) get_option('gseasy_tooltip_enable', 0),
             'tooltipStyle'  => get_option('gseasy_tooltip_style', 'light'),
         ]);
     }

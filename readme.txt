@@ -5,7 +5,7 @@ Tags: glossary, tooltips, terms, index, dictionary
 Requires at least: 5.7
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.1
+Stable tag: 1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,6 +33,13 @@ Yes, it uses standard hooks and minimal CSS.
 To show the glossary archive, you need to use the shortcode [gseasy_glossary].
 
 == Changelog ==
+
+
+= 1.2 =
+* Added # digit bucket in the A–Z filter and grouped all numeric terms under one # heading.
+* Improved glossary search ranking to prioritize term-title matches while still matching term content and excerpts.
+* Added floating scroll-to-top button on glossary single pages and shortcode index output.
+* Made full list/grid cards clickable with hover/focus styles for better discoverability.
 
 = 1.1 =
 * Added a per-term Schema (JSON-LD) textarea under glossary item editing.

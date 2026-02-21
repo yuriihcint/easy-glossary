@@ -29,6 +29,28 @@
     border-radius: 4px;
 }
 
+.gseasy-item-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    padding: 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.gseasy-item-link:hover,
+.gseasy-item-link:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    border-color: #ddd;
+    background-color: #fff;
+}
+
+.gseasy-item-link h3 {
+    margin: 0;
+}
+
 /* Search and Alphabet Filter */
 .gseasy-search-form {
     margin-bottom: 20px;
@@ -94,6 +116,25 @@
     line-height: 1.4;
 }
 
+.gseasy-scroll-up {
+    position: relative;
+    margin: 24px 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 999px;
+    background: var(--theme-font-button_background-color, var(--theme-color-link));
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Tooltip */
 .gseasy-tooltip {
     position: absolute;
@@ -141,4 +182,14 @@
     .gseasy-index.grid .gseasy-item {
         width: 100%; /* 1 item per row */
     }
+}
+
+
+.gseasy-top-anchor {
+    position: relative;
+    top: -8px;
+}
+
+.gseasy-scroll-up {
+    text-decoration: none;
 }
