@@ -258,6 +258,9 @@ add_filter('the_content', function ($content) {
             $current_letter = strtoupper(
                 sanitize_text_field(wp_unslash($_GET['gseasy_letter']))
             );
+            if (in_array($current_letter, ['#', 'DIGITS', '0-9'], true)) {
+                $current_letter = '#';
+            }
         }
     }
 
@@ -280,7 +283,7 @@ add_filter('the_content', function ($content) {
 
     $digit_url = add_query_arg(
         array_filter([
-            'gseasy_letter' => '#',
+            'gseasy_letter' => 'digits',
             'gseasy_search' => ($search_query !== '' ? $search_query : null),
         ]),
         $base_url
@@ -429,7 +432,12 @@ function gseasy_render_index_shortcode() {
     $search_query   = get_query_var('gseasy_search');
 
     if (is_string($current_letter)) {
-        $current_letter = strtoupper($current_letter);
+        $current_letter = strtoupper(trim($current_letter));
+    }
+
+    // Support multiple aliases because raw '#' may be swallowed as URL fragment when typed manually.
+    if (in_array($current_letter, ['#', 'DIGITS', '0-9'], true)) {
+        $current_letter = '#';
     }
 
     $is_digit_bucket = ($current_letter === '#');
@@ -469,7 +477,7 @@ function gseasy_render_index_shortcode() {
     echo '<div class="gseasy-alphabet-filter">';
     $all_url = esc_url( add_query_arg( array( 'gseasy_search' => $search_query ), $base_url ) );
     echo '<a href="' . esc_url( $all_url ) . '" class="gseasy-filter-all' . ($current_letter === '' ? ' active' : '') . '">All</a>';
-    $digit_url = esc_url(add_query_arg(array('gseasy_letter' => '#', 'gseasy_search' => $search_query), $base_url));
+    $digit_url = esc_url(add_query_arg(array('gseasy_letter' => 'digits', 'gseasy_search' => $search_query), $base_url));
     echo '<a href="' . esc_url($digit_url) . '" class="' . esc_attr($is_digit_bucket ? 'active' : '') . '">#</a>';
     foreach (range('A', 'Z') as $letter) {
         $url = esc_url( add_query_arg( array( 'gseasy_letter' => $letter, 'gseasy_search' => $search_query ), $base_url ) );
@@ -494,25 +502,9 @@ function gseasy_render_index_shortcode() {
     if (empty($terms)) {
         echo '<p>No glossary terms found.</p>';
     } else {
-        $grouped_terms = [];
-        foreach ($terms as $term) {
-            $first_letter = strtoupper(mb_substr($term->post_title, 0, 1));
-            if (preg_match('/^\d$/u', $first_letter)) {
-                $first_letter = '#';
-            }
-            $grouped_terms[$first_letter][] = $term;
-        }
-        ksort($grouped_terms);
-
-        if (isset($grouped_terms['#'])) {
-            $digit_group = ['#' => $grouped_terms['#']];
-            unset($grouped_terms['#']);
-            $grouped_terms = $digit_group + $grouped_terms;
-        }
-
-        foreach ($grouped_terms as $letter => $group) {
-            echo '<h2 class="gseasy-group-letter">' . esc_html($letter) . '</h2>';
-            foreach ($group as $term) {
+        if ($search_query) {
+            // Keep ranked order from gseasy_filter_terms_by_search() so title matches stay at the top.
+            foreach ($terms as $term) {
                 $excerpt = gseasy_get_excerpt($term, 30);
                 echo '<div class="gseasy-item">';
                 echo '<a class="gseasy-item-link" href="' . esc_url(get_permalink($term)) . '">';
@@ -520,6 +512,35 @@ function gseasy_render_index_shortcode() {
                 echo '<p class="gseasy-item-excerpt">' . esc_html($excerpt) . '</p>';
                 echo '</a>';
                 echo '</div>';
+            }
+        } else {
+            $grouped_terms = [];
+            foreach ($terms as $term) {
+                $first_letter = strtoupper(mb_substr($term->post_title, 0, 1));
+                if (preg_match('/^\d$/u', $first_letter)) {
+                    $first_letter = '#';
+                }
+                $grouped_terms[$first_letter][] = $term;
+            }
+            ksort($grouped_terms);
+
+            if (isset($grouped_terms['#'])) {
+                $digit_group = ['#' => $grouped_terms['#']];
+                unset($grouped_terms['#']);
+                $grouped_terms = $digit_group + $grouped_terms;
+            }
+
+            foreach ($grouped_terms as $letter => $group) {
+                echo '<h2 class="gseasy-group-letter">' . esc_html($letter) . '</h2>';
+                foreach ($group as $term) {
+                    $excerpt = gseasy_get_excerpt($term, 30);
+                    echo '<div class="gseasy-item">';
+                    echo '<a class="gseasy-item-link" href="' . esc_url(get_permalink($term)) . '">';
+                    echo '<h3>' . esc_html($term->post_title) . '</h3>';
+                    echo '<p class="gseasy-item-excerpt">' . esc_html($excerpt) . '</p>';
+                    echo '</a>';
+                    echo '</div>';
+                }
             }
         }
     }

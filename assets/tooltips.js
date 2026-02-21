@@ -43,13 +43,6 @@
   const scrollButtons = document.querySelectorAll('.gseasy-scroll-up');
   if (!scrollButtons.length) return;
 
-  const toggleButtons = () => {
-    const shouldShow = window.scrollY > 500;
-    scrollButtons.forEach(button => {
-      button.classList.toggle('visible', shouldShow);
-    });
-  };
-
   scrollButtons.forEach(button => {
     button.addEventListener('click', () => {
       const target = document.querySelector('.gseasy-search-form, .gseasy-alphabet-filter');
@@ -60,8 +53,4 @@
       }
     });
   });
-
-  window.addEventListener('scroll', toggleButtons, { passive: true });
-  window.addEventListener('resize', toggleButtons);
-  toggleButtons();
 })();
